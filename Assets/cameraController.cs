@@ -4,47 +4,44 @@ using UnityEngine;
 
 public class cameraController : MonoBehaviour
 {
-    Vector2 previousMousePosition;
-    Vector2 newMousePosition;
+    Vector3 previousMousePosition;
+    Vector3 newMousePosition;
 
-    RaycastHit? cameraCentre;
+    RaycastHit cameraCentre;
+    float panAmount;
     float previousScroll;
-    float minPanAngle = 90f;
-    float maxPanAngle = 180f;
+    float minPanAngle = -90f;
+    float maxPanAngle = 90f;
     float scrollSpeed = 4;
-    float cameraDragResistance = 50f;
     float cameraPanSpeed = 70f;
     GameObject playerHand;
+    GameObject cameraDirection;
     // Start is called before the first frame update
     void Start()
     {
         playerHand = GameObject.Find("PlayerHand");
+        cameraDirection = GameObject.Find("MainCameraDirection");
+        panAmount = this.transform.localEulerAngles.x;
     }
 
     // Update is called once per frame
     void Update()
     {
         if(Input.GetMouseButtonDown(0)){
-            previousMousePosition = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+            previousMousePosition = playerHand.transform.position;
             cameraCentre = CameraCentrePoint();
         }
         if(Input.GetMouseButton(0)){
-            newMousePosition = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+            newMousePosition = playerHand.transform.position;
             if(Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)){
-                //Rotate();
+                float rotateAngle = Input.GetAxis("Mouse X") * cameraPanSpeed * Mathf.Deg2Rad;
+                Rotate(rotateAngle);
             }
             else if(Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)){
-                float panAmount = Input.GetAxis("Mouse Y") * cameraPanSpeed * Mathf.Deg2Rad;
-                Debug.Log("neg "+-minPanAngle);
-                Debug.Log("pan "+panAmount);
-                Debug.Log("rot "+this.transform.rotation.eulerAngles.x );
-                /*if(this.transform.rotation.eulerAngles.x + panAmount > minPanAngle){
-                    panAmount = this.transform.rotation.eulerAngles.x - minPanAngle;
-                }
-                else if(this.transform.rotation.eulerAngles.x + panAmount < -maxPanAngle){
-                    panAmount = -(this.transform.rotation.eulerAngles.x - maxPanAngle);
-                }*/
-                Pan(panAmount);
+                panAmount += Input.GetAxis("Mouse Y") * cameraPanSpeed * Mathf.Deg2Rad;
+                panAmount = Mathf.Clamp(panAmount, minPanAngle, maxPanAngle);
+                Quaternion rotation = Quaternion.Euler(panAmount, this.transform.eulerAngles.y, this.transform.eulerAngles.z);
+                Pan(rotation);
             }
             else if(playerHand.GetComponent<playerControlls>().onTerrain){
                 DragCamera();
@@ -55,28 +52,37 @@ public class cameraController : MonoBehaviour
             Zoom(Input.GetAxis("Mouse ScrollWheel"));
         }
     }
+
     private void DragCamera(){
-        Vector2 moveDistance = (previousMousePosition - newMousePosition) / cameraDragResistance;
-        this.transform.position = new Vector3(this.transform.position.x + moveDistance.x, this.transform.position.y, this.transform.position.z + moveDistance.y);
-        
+        float moveX = Input.GetAxis("Mouse X");
+        float moveY = Input.GetAxis("Mouse Y");
+        cameraDirection.transform.Translate(Vector3.back * moveY, Space.Self);
+        cameraDirection.transform.Translate(Vector3.left * moveX, Space.Self);
     }
-    private RaycastHit? CameraCentrePoint(){
+
+    private RaycastHit CameraCentrePoint(){
         RaycastHit rayHitInfo;
-        if(Physics.Raycast(this.transform.position, this.transform.forward, out rayHitInfo, default, 3)){
+        if(Physics.Raycast(this.transform.position, this.transform.forward, out rayHitInfo)){
             return rayHitInfo;
         }
-        return null;
+        return rayHitInfo;
     }
+
     private void Zoom(float scrollAmount){
         this.transform.Translate(Vector3.forward * scrollAmount * scrollSpeed);
         previousScroll = Input.GetAxis("Mouse ScrollWheel");
     }
-    private void Rotate(float angle, Vector3 rotationPoint){
-        if(cameraCentre != null){
-            
+
+    private void Rotate(float angle){
+        if(cameraCentre.point == new Vector3(0,0,0)){
+            cameraDirection.transform.Rotate(Vector3.up, angle, Space.World);
         }
+        else{
+            cameraDirection.transform.RotateAround(cameraCentre.point, Vector3.up, angle);
+        }   
     }
-    private void Pan(float angle){
-        this.transform.Rotate(angle,0f,0f);
+
+    private void Pan(Quaternion rotation){
+        this.transform.rotation = rotation;
     }
 }

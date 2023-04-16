@@ -17,13 +17,14 @@ public class playerControlls : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(!Input.GetMouseButton(0) || !onTerrain){
+        if(!Input.GetMouseButton(0) || Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt) || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl) || !onTerrain){
             FollowMouse();
         }
     }
 
     private void FollowMouse(){
-        Vector3 nextPosition = this.gameObject.transform.position;
+        mouseX
+        /*Vector3 nextPosition = this.gameObject.transform.position;
         RaycastHit midRayHitInfo;
         GameObject mouseOverObject;
         Vector3 mouseOverLocation;
@@ -38,6 +39,6 @@ public class playerControlls : MonoBehaviour
             onTerrain = false;
             nextPosition = mainCamera.ScreenPointToRay(Input.mousePosition).GetPoint(maxRange);
         }   
-        transform.position = nextPosition;
+        transform.position = nextPosition;*/
     }
 }
